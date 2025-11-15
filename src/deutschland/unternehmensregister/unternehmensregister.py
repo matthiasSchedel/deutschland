@@ -95,7 +95,7 @@ class Unternehmensregister:
 
     def __get_response(self, url: str) -> requests.Response:
         """Send a request to a URL and validate the response"""
-        response = self.session.get(url, timeout=30)
+        response = self.session.get(url, timeout=30, allow_redirects=True)
         if not response.ok:
             raise ConnectionError(
                 f"There was an error while connecting to '{response.url}'. Got status code {response.status_code} - {response.reason}"
@@ -129,10 +129,10 @@ class Unternehmensregister:
 
         # Next.js apps often include data in a script tag with id="__NEXT_DATA__"
         next_data_script = soup.find("script", {"id": "__NEXT_DATA__"})
-        if next_data_script:
+        if next_data_script and next_data_script.string:
             try:
                 return json.loads(next_data_script.string)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, TypeError):
                 pass
 
         return None
@@ -290,12 +290,14 @@ class Unternehmensregister:
         """
         results = {}
 
-        # First, visit the home page to establish session
+        # First, visit the home page to establish session and get cookies
         try:
-            self.__get_response(f"{self.BASE_URL}/de/")
-        except Exception:
-            # Continue even if home page fails
-            pass
+            home_response = self.__get_response(f"{self.BASE_URL}/de")
+            # Give some time for cookies to be set
+            time.sleep(0.5)
+        except Exception as e:
+            # Continue even if home page fails, but log it
+            print(f"Warning: Could not access homepage: {e}")
 
         # Perform search
         search_params = {

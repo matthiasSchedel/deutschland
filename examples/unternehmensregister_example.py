@@ -1,7 +1,15 @@
 """
 Example usage of the Unternehmensregister API
 
-This example demonstrates how to search for company reports from unternehmensregister.de
+⚠️ IMPORTANT: This example demonstrates the API structure, but due to
+the website's client-side rendering (React/Next.js), it will return 0 results.
+
+For actually extracting data, see: unternehmensregister_selenium_example.py
+
+This example is useful for:
+- Understanding the API design
+- Testing website connectivity
+- Framework for future updates if the site changes
 """
 
 from deutschland.unternehmensregister import Unternehmensregister
@@ -39,10 +47,15 @@ def main():
             print()
 
         if not reports:
-            print("No reports found. This may be because:")
-            print("1. The company name doesn't exist in the registry")
-            print("2. The website structure has changed")
-            print("3. The website is temporarily unavailable")
+            print("⚠️ No reports found.")
+            print("\nThis is EXPECTED because the website uses client-side rendering.")
+            print("The search results are loaded by JavaScript AFTER the page loads,")
+            print("which requests + BeautifulSoup cannot handle.")
+            print("\nFor actual data extraction, use:")
+            print("1. Browser automation (Selenium/Playwright)")
+            print("   See: unternehmensregister_selenium_example.py")
+            print("2. Third-party APIs (handelsregister.ai, etc.)")
+            print("3. Manual browser access")
 
     except Exception as e:
         print(f"\nError occurred: {e}")

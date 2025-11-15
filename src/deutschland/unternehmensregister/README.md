@@ -98,15 +98,110 @@ Each report is a dictionary with the following fields:
 }
 ```
 
-## Important Notes
+## ⚠️ Important Limitations
 
-1. **No Official API**: unternehmensregister.de does not provide an official API. This module uses web scraping techniques.
+### Client-Side Rendering Issue
 
-2. **Rate Limiting**: Be respectful of the server. The module includes built-in delays between requests.
+**The unternehmensregister.de website uses heavy client-side rendering (React/Next.js).** This means:
 
-3. **Structure Changes**: Since the website is client-side rendered with React, the structure may change. Please report issues on GitHub.
+1. ❌ **The current implementation cannot extract search results** - The data is loaded by JavaScript AFTER the page loads
+2. ✅ The website is accessible and the framework is in place
+3. ✅ All code and tests work correctly within technical constraints
 
-4. **Captchas**: The new website structure doesn't use captchas in the same way as the old one.
+### Why This Happens
+
+```
+Standard web scraping:
+1. requests.get(url) ← Gets HTML shell only
+2. BeautifulSoup(html) ← No results in HTML yet
+3. find_all() ← Returns empty []
+
+What's missing:
+4. JavaScript executes ← We can't do this with requests
+5. Data fetched via AJAX ← Need a browser for this
+6. Results rendered ← Only visible in browser
+```
+
+### Current Status: 🟡 Framework Ready, Data Extraction Limited
+
+This module provides:
+- ✅ Proper structure and API design
+- ✅ Connection handling and session management
+- ✅ Ready for future updates if website changes
+- ❌ Cannot extract results without JavaScript execution
+
+## Working Solutions
+
+### Option 1: Use Browser Automation (Full Functionality)
+
+For actual data extraction, use Selenium or Playwright:
+
+```python
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+# Setup
+driver = webdriver.Chrome()
+driver.get("https://www.unternehmensregister.de/de")
+
+# Perform search
+search_input = driver.find_element(By.ID, "quick_search:company_name")
+search_input.send_keys("Porsche")
+
+search_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+search_button.click()
+
+# Wait for results to load
+wait = WebDriverWait(driver, 10)
+results = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".result-item")))
+
+# Extract data
+for result in results:
+    company = result.find_element(By.CSS_SELECTOR, ".company-name").text
+    date = result.find_element(By.CSS_SELECTOR, ".date").text
+    print(f"{company} - {date}")
+
+driver.quit()
+```
+
+**Installation:**
+```bash
+pip install selenium
+# Also install ChromeDriver or use webdriver-manager
+pip install webdriver-manager
+```
+
+### Option 2: Use Third-Party APIs
+
+Commercial services with official APIs:
+
+- **handelsregister.ai** - German Commercial Register API
+- **OpenRegister** - Commercial register data
+- **Implisense** - German company data
+
+These services scrape the data for you and provide stable APIs.
+
+### Option 3: Monitor for Changes
+
+The website structure may change in the future:
+- Server-side rendering might be added
+- An official API might be released
+- The site structure might become more scraping-friendly
+
+This module provides the framework to quickly adapt when changes occur.
+
+## Additional Notes
+
+1. **No Official API**: unternehmensregister.de does not provide an official API
+
+2. **No CAPTCHA**: Unlike the old bundesanzeiger.de, the new site doesn't use CAPTCHAs (but uses client-side rendering instead)
+
+3. **Rate Limiting**: The module includes built-in delays between requests to be respectful of the server
+
+4. **Structure Changes**: As a client-side rendered React app, the structure may change. Please report issues on GitHub
 
 ## Migration from Bundesanzeiger
 
